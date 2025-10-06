@@ -124,6 +124,7 @@ puts "🔐 Application running with valid license protection!"
 
 #### 4. Custom Machine ID (For Server Applications)
 When you need to specify a particular machine identifier:
+(note: be very careful using custom machine identifiers as machine identifiers must be unique. As in, if the machine identifier matches ANY OTHER machine identifier in the Source-License database, activation ***WILL*** fail. We strongly suggest using the built in machine identifier generation method)
 
 ```ruby
 require 'source_license_sdk'
