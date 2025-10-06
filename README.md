@@ -460,7 +460,8 @@ result = SourceLicenseSDK.validate_license
 ```ruby
 # ❌ This might fail
 SourceLicenseSDK.setup(auto_generate_machine_id: false)
-result = SourceLicenseSDK.activate_license
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+result = SourceLicenseSDK.activate_license(license_key, machine_id: machine_id)
 
 # ✅ Either enable auto-generation or provide manual ID
 SourceLicenseSDK.setup(
@@ -520,7 +521,8 @@ end
 
 # Test 2: Activation (if needed)
 puts "\n2️⃣  Testing license activation..."
-activation_result = SourceLicenseSDK.activate_license
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+activation_result = SourceLicenseSDK.activate_license(LICENSE_KEY, machine_id: machine_id)
 if activation_result.success?
   puts "✅ Activation successful"
   puts "   Remaining: #{activation_result.activations_remaining}"
