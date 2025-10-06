@@ -33,18 +33,102 @@ gem install source_license_sdk
 
 ## Quick Start
 
-### Basic Setup
+### 🚀 Copy-Paste Examples for Instant Setup
+
+#### 1. Simple License Check (Most Common)
+Copy-paste this code and replace with your details:
 
 ```ruby
 require 'source_license_sdk'
 
-# Configure the SDK
+# Setup (replace with your actual values)
 SourceLicenseSDK.setup(
-  server_url: 'https://your-license-server.com',
-  license_key: 'YOUR-LICENSE-KEY',
-  machine_id: 'unique-machine-identifier' # Optional, will auto-generate if not provided
+  server_url: 'http://localhost:4567',     # Your Source-License server
+  license_key: 'VB6K-FSEY-VYWT-HTRJ'      # The license key to validate
 )
+
+# Validate license
+result = SourceLicenseSDK.validate_license
+if result.valid?
+  puts "✅ License is valid! Application can continue."
+else
+  puts "❌ License invalid: #{result.error_message}"
+  exit 1
+end
+
+# Your application code here...
+puts "🎉 Your application is running!"
 ```
+
+#### 2. License Activation (One-Time Setup)
+For applications that need to activate on first run:
+
+```ruby
+require 'source_license_sdk'
+
+# Setup
+SourceLicenseSDK.setup(
+  server_url: 'http://localhost:4567',
+  license_key: 'VB6K-FSEY-VYWT-HTRJ'
+)
+
+# Try to activate the license
+puts "Activating license..."
+result = SourceLicenseSDK.activate_license
+
+if result.success?
+  puts "✅ License activated successfully!"
+  puts "📊 Activations remaining: #{result.activations_remaining}"
+else
+  puts "❌ Activation failed: #{result.error_message}"
+  exit 1
+end
+```
+
+#### 3. Complete App Protection (Recommended)
+One-liner that handles everything automatically:
+
+```ruby
+require 'source_license_sdk'
+
+# Setup and enforce in one go - app exits if license is invalid
+SourceLicenseSDK.setup(
+  server_url: 'http://localhost:4567',
+  license_key: 'VB6K-FSEY-VYWT-HTRJ'
+)
+
+# This line will exit your app if license is invalid - no other code needed!
+SourceLicenseSDK.enforce_license!
+
+# Your protected application code starts here
+puts "🔐 Application running with valid license protection!"
+```
+
+#### 4. Custom Machine ID (For Server Applications)
+When you need to specify a particular machine identifier:
+
+```ruby
+require 'source_license_sdk'
+
+# Setup with custom machine ID
+SourceLicenseSDK.setup(
+  server_url: 'http://localhost:4567',
+  license_key: 'VB6K-FSEY-VYWT-HTRJ',
+  machine_id: 'SERVER-PROD-001'  # Your custom identifier
+)
+
+# Activate with the custom machine ID
+result = SourceLicenseSDK.activate_license
+puts result.success? ? "✅ Activated on SERVER-PROD-001" : "❌ #{result.error_message}"
+```
+
+### 📋 Core Methods Overview
+
+| Method | Purpose | Returns | Use Case |
+|--------|---------|---------|----------|
+| `validate_license` | Check if license is valid | `LicenseValidationResult` | Regular license checking |
+| `activate_license` | Activate license on machine | `LicenseValidationResult` | First-time setup |
+| `enforce_license!` | Validate and exit if invalid | Nothing (exits on failure) | Application protection |
 
 ### Method 1: License Validation
 
@@ -270,6 +354,153 @@ class MyApplication
 end
 ```
 
+## 🛠️ Troubleshooting & Common Issues
+
+### Quick Diagnostics
+Test your setup with this diagnostic snippet:
+
+```ruby
+require 'source_license_sdk'
+
+puts "🔍 Source-License SDK Diagnostics"
+puts "=================================="
+
+# Test configuration
+begin
+  SourceLicenseSDK.setup(
+    server_url: 'http://localhost:4567',
+    license_key: 'VB6K-FSEY-VYWT-HTRJ'
+  )
+  puts "✅ Configuration: OK"
+rescue => e
+  puts "❌ Configuration Error: #{e.message}"
+end
+
+# Test machine ID generation
+begin
+  machine_id = SourceLicenseSDK::MachineIdentifier.generate
+  puts "✅ Machine ID: #{machine_id}"
+rescue => e
+  puts "❌ Machine ID Error: #{e.message}"
+end
+
+# Test server connectivity
+begin
+  result = SourceLicenseSDK.validate_license
+  puts "✅ Server Connection: OK"
+  puts "📊 License Status: #{result.valid? ? 'Valid' : 'Invalid'}"
+rescue SourceLicenseSDK::NetworkError => e
+  puts "❌ Network Error: #{e.message}"
+rescue => e
+  puts "❌ Unexpected Error: #{e.message}"
+end
+```
+
+### Common Problems & Solutions
+
+#### Problem: "Failed to open TCP connection"
+```ruby
+# ❌ Error: Connection refused
+# ✅ Solution: Check your server URL and ensure the server is running
+
+SourceLicenseSDK.setup(
+  server_url: 'https://your-actual-domain.com',  # Not localhost in production
+  license_key: 'YOUR-KEY'
+)
+```
+
+#### Problem: "License key is required"
+```ruby
+# ❌ This will fail
+result = SourceLicenseSDK.validate_license(nil)
+
+# ✅ Always provide a license key
+SourceLicenseSDK.setup(license_key: 'YOUR-ACTUAL-LICENSE-KEY')
+result = SourceLicenseSDK.validate_license
+```
+
+#### Problem: "Machine ID is required for activation"
+```ruby
+# ❌ This might fail
+SourceLicenseSDK.setup(auto_generate_machine_id: false)
+result = SourceLicenseSDK.activate_license
+
+# ✅ Either enable auto-generation or provide manual ID
+SourceLicenseSDK.setup(
+  license_key: 'YOUR-KEY',
+  machine_id: 'MY-SERVER-001'  # Manual ID
+)
+# OR
+SourceLicenseSDK.setup(
+  license_key: 'YOUR-KEY',
+  auto_generate_machine_id: true  # Auto-generate (default)
+)
+```
+
+#### Problem: Rate limiting
+```ruby
+# Handle rate limits gracefully
+begin
+  result = SourceLicenseSDK.validate_license
+rescue SourceLicenseSDK::RateLimitError => e
+  puts "Rate limited. Waiting #{e.retry_after} seconds..."
+  sleep(e.retry_after)
+  retry  # Try again after waiting
+end
+```
+
+### 🧪 Testing Your Integration
+
+#### Test Script Template
+Save this as `test_license.rb` to verify your setup:
+
+```ruby
+#!/usr/bin/env ruby
+require 'source_license_sdk'
+
+# Replace these with your actual values
+SERVER_URL = 'http://localhost:4567'
+LICENSE_KEY = 'VB6K-FSEY-VYWT-HTRJ'
+
+puts "🧪 Testing Source-License Integration"
+puts "====================================="
+
+# Setup
+SourceLicenseSDK.setup(
+  server_url: SERVER_URL,
+  license_key: LICENSE_KEY
+)
+
+# Test 1: Basic validation
+puts "\n1️⃣  Testing license validation..."
+result = SourceLicenseSDK.validate_license
+if result.valid?
+  puts "✅ License is valid"
+  puts "   Expires: #{result.expires_at || 'Never'}"
+else
+  puts "❌ License invalid: #{result.error_message}"
+end
+
+# Test 2: Activation (if needed)
+puts "\n2️⃣  Testing license activation..."
+activation_result = SourceLicenseSDK.activate_license
+if activation_result.success?
+  puts "✅ Activation successful"
+  puts "   Remaining: #{activation_result.activations_remaining}"
+else
+  puts "ℹ️  Activation result: #{activation_result.error_message}"
+end
+
+# Test 3: Machine ID
+puts "\n3️⃣  Testing machine identification..."
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+puts "🖥️  Machine ID: #{machine_id}"
+
+puts "\n🎉 Integration test complete!"
+```
+
+Run it with: `ruby test_license.rb`
+
 ## Error Types
 
 The SDK defines several exception types for different error scenarios:
@@ -324,6 +555,16 @@ This gem is available as open source under the terms of the [GPL-3.0 License](LI
 
 ## Support
 
-For support with this SDK, please open an issue on the [Source-License repository](https://github.com/PixelRidgeSoftworks/Source-License).
+For support with this SDK and the Source-License platform, join our Discord community:
 
-For general Source-License platform support, please contact your license provider.
+**🎮 Discord Server:** [discord.gg/j6v99ZPkrQ](https://discord.gg/j6v99ZPkrQ)
+
+**💬 SDK Support Channel:** [#source-license-support](https://discord.com/channels/1419376086390800474/1419385647394984007)
+
+Our community and developers are active on Discord to help with:
+- SDK integration questions
+- Troubleshooting license issues  
+- Best practices and implementation guidance
+- Feature requests and feedback
+
+For urgent issues or enterprise support, please contact your license provider directly.
