@@ -36,15 +36,19 @@ gem install source_license_sdk
 ### 🚀 Copy-Paste Examples for Instant Setup
 
 #### 1. Simple License Check (Most Common)
-Copy-paste this code and replace with your details:
+Copy-paste this code and replace with your server URL:
 
 ```ruby
 require 'source_license_sdk'
 
-# Setup (replace with your actual values)
+# Get license key from user (command line, config file, environment variable, etc.)
+print "Enter your license key: "
+license_key = gets.chomp
+
+# Setup (replace server URL with your actual server)
 SourceLicenseSDK.setup(
   server_url: 'http://localhost:4567',     # Your Source-License server
-  license_key: 'VB6K-FSEY-VYWT-HTRJ'      # The license key to validate
+  license_key: license_key                 # License key from user
 )
 
 # Validate license
@@ -66,15 +70,23 @@ For applications that need to activate on first run:
 ```ruby
 require 'source_license_sdk'
 
+# Get license key from user
+print "Enter your license key: "
+license_key = gets.chomp
+
 # Setup
 SourceLicenseSDK.setup(
-  server_url: 'http://localhost:4567',
-  license_key: 'VB6K-FSEY-VYWT-HTRJ'
+  server_url: 'http://localhost:4567',     # Your Source-License server
+  license_key: license_key
 )
+
+# Generate machine ID for activation
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+puts "Machine ID: #{machine_id}"
 
 # Try to activate the license
 puts "Activating license..."
-result = SourceLicenseSDK.activate_license
+result = SourceLicenseSDK.activate_license(license_key, machine_id: machine_id)
 
 if result.success?
   puts "✅ License activated successfully!"
@@ -91,10 +103,16 @@ One-liner that handles everything automatically:
 ```ruby
 require 'source_license_sdk'
 
+# Get license key from user (or load from config file)
+license_key = ARGV[0] || ENV['LICENSE_KEY'] || begin
+  print "Enter your license key: "
+  gets.chomp
+end
+
 # Setup and enforce in one go - app exits if license is invalid
 SourceLicenseSDK.setup(
-  server_url: 'http://localhost:4567',
-  license_key: 'VB6K-FSEY-VYWT-HTRJ'
+  server_url: 'http://localhost:4567',     # Your Source-License server
+  license_key: license_key
 )
 
 # This line will exit your app if license is invalid - no other code needed!
@@ -110,16 +128,26 @@ When you need to specify a particular machine identifier:
 ```ruby
 require 'source_license_sdk'
 
-# Setup with custom machine ID
+# Get license key from user or environment
+license_key = ENV['LICENSE_KEY'] || begin
+  print "Enter your license key: "
+  gets.chomp
+end
+
+# Generate machine ID (recommended) or use custom identifier
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+# OR use custom ID: machine_id = 'SERVER-PROD-001'
+
+# Setup
 SourceLicenseSDK.setup(
-  server_url: 'http://localhost:4567',
-  license_key: 'VB6K-FSEY-VYWT-HTRJ',
-  machine_id: 'SERVER-PROD-001'  # Your custom identifier
+  server_url: 'http://localhost:4567',     # Your Source-License server
+  license_key: license_key,
+  machine_id: machine_id
 )
 
-# Activate with the custom machine ID
-result = SourceLicenseSDK.activate_license
-puts result.success? ? "✅ Activated on SERVER-PROD-001" : "❌ #{result.error_message}"
+# Activate with the machine ID
+result = SourceLicenseSDK.activate_license(license_key, machine_id: machine_id)
+puts result.success? ? "✅ Activated on #{machine_id}" : "❌ #{result.error_message}"
 ```
 
 ### 📋 Core Methods Overview
@@ -150,7 +178,11 @@ end
 Activate a license on the current machine:
 
 ```ruby
-result = SourceLicenseSDK.activate_license
+# Generate machine ID for activation
+machine_id = SourceLicenseSDK::MachineIdentifier.generate
+
+# Activate with explicit machine ID
+result = SourceLicenseSDK.activate_license(license_key, machine_id: machine_id)
 
 if result.success?
   puts "License activated successfully!"
@@ -337,7 +369,12 @@ class MyApplication
     
     unless result.valid?
       puts "Activating license..."
-      activation_result = SourceLicenseSDK.activate_license
+      
+      # Generate machine ID for activation
+      machine_id = SourceLicenseSDK::MachineIdentifier.generate
+      license_key = load_license_key
+      
+      activation_result = SourceLicenseSDK.activate_license(license_key, machine_id: machine_id)
       
       unless activation_result.success?
         puts "Failed to activate license: #{activation_result.error_message}"
