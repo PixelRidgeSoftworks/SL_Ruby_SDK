@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
     Gemfile
     Rakefile
     source_license_sdk.gemspec
-  ]).select { |f| File.file?(f) }
+  ]).select { |f| File.file?(f) }.reject { |f| f.match?(/SL_Ruby_SDK_Test/) }
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']

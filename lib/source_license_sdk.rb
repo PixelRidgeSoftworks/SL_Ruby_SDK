@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'source_license_sdk/version'
-require_relative 'source_license_sdk/client'
+require_relative 'source_license_sdk/exceptions'
 require_relative 'source_license_sdk/machine_identifier'
 require_relative 'source_license_sdk/license_validator'
-require_relative 'source_license_sdk/exceptions'
+require_relative 'source_license_sdk/client'
 
 module SourceLicenseSDK
   # Configure the SDK with your Source-License server details
@@ -31,9 +31,9 @@ module SourceLicenseSDK
     license_key ||= configuration.license_key
     machine_id ||= configuration.machine_id
 
-    raise ConfigurationError, 'License key is required' if license_key.nil? || license_key.empty?
+    raise SourceLicenseSDK::ConfigurationError, 'License key is required' if license_key.nil? || license_key.empty?
 
-    client = Client.new(configuration)
+    client = SourceLicenseSDK::Client.new(configuration)
     client.validate_license(license_key, machine_id: machine_id)
   end
 
@@ -41,12 +41,12 @@ module SourceLicenseSDK
   def self.activate_license(license_key = nil, machine_id: nil)
     license_key ||= configuration.license_key
     machine_id ||= configuration.machine_id ||
-                   (configuration.auto_generate_machine_id ? MachineIdentifier.generate : nil)
+                   (configuration.auto_generate_machine_id ? SourceLicenseSDK::MachineIdentifier.generate : nil)
 
-    raise ConfigurationError, 'License key is required' if license_key.nil? || license_key.empty?
-    raise ConfigurationError, 'Machine ID is required for activation' if machine_id.nil? || machine_id.empty?
+    raise SourceLicenseSDK::ConfigurationError, 'License key is required' if license_key.nil? || license_key.empty?
+    raise SourceLicenseSDK::ConfigurationError, 'Machine ID is required for activation' if machine_id.nil? || machine_id.empty?
 
-    client = Client.new(configuration)
+    client = SourceLicenseSDK::Client.new(configuration)
     client.activate_license(license_key, machine_id: machine_id)
   end
 

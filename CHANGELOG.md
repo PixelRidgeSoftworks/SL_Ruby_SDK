@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-05
+
+### Changed
+- Updated gemspec to exclude SL_Ruby_SDK_Test directory from gem builds
+- Test suite is now available in repository but not included in distributed gem
+
+## [1.0.1] - 2025-10-05
+
+### Fixed
+- Improved test suite reliability and error handling
+- Fixed nil license key validation test logic
+- Fixed machine ID activation test edge cases
+- Enhanced configuration state management in tests
+
+### Added
+- Comprehensive test script with 45 test cases covering all SDK functionality
+- Better error handling for edge cases in license validation and activation
+- Improved test coverage for network errors and rate limiting scenarios
+
 ## [1.0.0] - 2025-01-05
 
 ### Added

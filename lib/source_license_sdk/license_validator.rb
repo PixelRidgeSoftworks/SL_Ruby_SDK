@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'time'
+
 # Represents the result of a license validation or activation request
 class SourceLicenseSDK::LicenseValidationResult
   attr_reader :valid, :success, :error_message, :error_code, :expires_at,

@@ -15,7 +15,7 @@ class SourceLicenseSDK::Client
 
   # Validate a license key
   def validate_license(license_key, machine_id: nil, machine_fingerprint: nil)
-    machine_fingerprint ||= MachineIdentifier.generate_fingerprint if machine_id
+    machine_fingerprint ||= SourceLicenseSDK::MachineIdentifier.generate_fingerprint if machine_id
 
     path = "/api/license/#{license_key}/validate"
     params = {}
@@ -23,14 +23,14 @@ class SourceLicenseSDK::Client
     params[:machine_fingerprint] = machine_fingerprint if machine_fingerprint
 
     response = make_request(:get, path, params: params)
-    LicenseValidationResult.new(response)
-  rescue NetworkError => e
+    SourceLicenseSDK::LicenseValidationResult.new(response)
+  rescue SourceLicenseSDK::NetworkError => e
     handle_network_error(e)
   end
 
   # Activate a license on this machine
   def activate_license(license_key, machine_id:, machine_fingerprint: nil)
-    machine_fingerprint ||= MachineIdentifier.generate_fingerprint
+    machine_fingerprint ||= SourceLicenseSDK::MachineIdentifier.generate_fingerprint
 
     path = "/api/license/#{license_key}/activate"
     body = {
@@ -39,16 +39,16 @@ class SourceLicenseSDK::Client
     }
 
     response = make_request(:post, path, body: body)
-    LicenseValidationResult.new(response)
-  rescue NetworkError => e
+    SourceLicenseSDK::LicenseValidationResult.new(response)
+  rescue SourceLicenseSDK::NetworkError => e
     handle_network_error(e)
   end
 
   private
 
   def validate_config!
-    raise ConfigurationError, 'Server URL is required' unless config.server_url
-    raise ConfigurationError, 'Invalid server URL format' unless valid_url?(config.server_url)
+    raise SourceLicenseSDK::ConfigurationError, 'Server URL is required' unless config.server_url
+    raise SourceLicenseSDK::ConfigurationError, 'Invalid server URL format' unless valid_url?(config.server_url)
   end
 
   def valid_url?(url)
@@ -115,15 +115,15 @@ class SourceLicenseSDK::Client
       raise_license_error(data, response.code.to_i)
     when 404
       data = parse_json_response(response.body)
-      raise LicenseNotFoundError, data['error'] || 'License not found'
+      raise SourceLicenseSDK::LicenseNotFoundError, data['error'] || 'License not found'
     when 429
       data = parse_json_response(response.body)
       retry_after = response['Retry-After']&.to_i || data['retry_after']
-      raise RateLimitError.new(data['error'] || 'Rate limit exceeded', retry_after: retry_after)
+      raise SourceLicenseSDK::RateLimitError.new(data['error'] || 'Rate limit exceeded', retry_after: retry_after)
     when 500..599
-      raise NetworkError.new('Server error occurred', response_code: response.code.to_i, response_body: response.body)
+      raise SourceLicenseSDK::NetworkError.new('Server error occurred', response_code: response.code.to_i, response_body: response.body)
     else
-      raise NetworkError.new("Unexpected response: #{response.code}", response_code: response.code.to_i,
+      raise SourceLicenseSDK::NetworkError.new("Unexpected response: #{response.code}", response_code: response.code.to_i,
                                                                       response_body: response.body)
     end
   end
@@ -133,7 +133,7 @@ class SourceLicenseSDK::Client
 
     JSON.parse(body)
   rescue JSON::ParserError
-    raise NetworkError.new('Invalid JSON response from server', response_body: body)
+    raise SourceLicenseSDK::NetworkError.new('Invalid JSON response from server', response_body: body)
   end
 
   def raise_license_error(data, _status_code)
@@ -141,32 +141,32 @@ class SourceLicenseSDK::Client
 
     case error_message.downcase
     when /expired/
-      raise LicenseExpiredError, error_message
+      raise SourceLicenseSDK::LicenseExpiredError, error_message
     when /rate limit/
       retry_after = data['retry_after']
-      raise RateLimitError.new(error_message, retry_after: retry_after)
+      raise SourceLicenseSDK::RateLimitError.new(error_message, retry_after: retry_after)
     when /not found/
-      raise LicenseNotFoundError, error_message
+      raise SourceLicenseSDK::LicenseNotFoundError, error_message
     when /activation/
-      raise ActivationError, error_message
+      raise SourceLicenseSDK::ActivationError, error_message
     else
-      raise LicenseError.new(error_message, error_code: data['error_code'])
+      raise SourceLicenseSDK::LicenseError.new(error_message, error_code: data['error_code'])
     end
   end
 
   def handle_network_error(error)
     # Convert network errors to license validation results for consistency
     case error
-    when RateLimitError
-      LicenseValidationResult.new(
+    when SourceLicenseSDK::RateLimitError
+      SourceLicenseSDK::LicenseValidationResult.new(
         valid: false,
         success: false,
         error: error.message,
         error_code: error.error_code,
         retry_after: error.retry_after
       )
-    when LicenseNotFoundError, LicenseExpiredError, ActivationError
-      LicenseValidationResult.new(
+    when SourceLicenseSDK::LicenseNotFoundError, SourceLicenseSDK::LicenseExpiredError, SourceLicenseSDK::ActivationError
+      SourceLicenseSDK::LicenseValidationResult.new(
         valid: false,
         success: false,
         error: error.message,
