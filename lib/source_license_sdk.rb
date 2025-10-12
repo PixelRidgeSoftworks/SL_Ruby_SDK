@@ -44,7 +44,11 @@ module SourceLicenseSDK
                    (configuration.auto_generate_machine_id ? SourceLicenseSDK::MachineIdentifier.generate : nil)
 
     raise SourceLicenseSDK::ConfigurationError, 'License key is required' if license_key.nil? || license_key.empty?
-    raise SourceLicenseSDK::ConfigurationError, 'Machine ID is required for activation' if machine_id.nil? || machine_id.empty?
+
+    if machine_id.nil? || machine_id.empty?
+      raise SourceLicenseSDK::ConfigurationError,
+            'Machine ID is required for activation'
+    end
 
     client = SourceLicenseSDK::Client.new(configuration)
     client.activate_license(license_key, machine_id: machine_id)

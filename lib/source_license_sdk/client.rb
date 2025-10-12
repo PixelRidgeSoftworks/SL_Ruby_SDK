@@ -121,10 +121,11 @@ class SourceLicenseSDK::Client
       retry_after = response['Retry-After']&.to_i || data['retry_after']
       raise SourceLicenseSDK::RateLimitError.new(data['error'] || 'Rate limit exceeded', retry_after: retry_after)
     when 500..599
-      raise SourceLicenseSDK::NetworkError.new('Server error occurred', response_code: response.code.to_i, response_body: response.body)
+      raise SourceLicenseSDK::NetworkError.new('Server error occurred', response_code: response.code.to_i,
+                                                                        response_body: response.body)
     else
       raise SourceLicenseSDK::NetworkError.new("Unexpected response: #{response.code}", response_code: response.code.to_i,
-                                                                      response_body: response.body)
+                                                                                        response_body: response.body)
     end
   end
 
